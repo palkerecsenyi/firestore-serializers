@@ -1,12 +1,13 @@
 {
   "name": "firestore-serializers",
-  "version": "0.1.0",
+  "version": "0.0.3",
   "description": "An automatic Javascript serialization/deserialization system for Firestore",
   "main": "dist/index.js",
+  "typings": "dist/index.d.ts",
   "scripts": {
     "test": "ts-mocha tests/**/*.test.ts --timeout 10000 --exit",
-    "coverage": "nyc npm run test",
-    "build": "tsc"
+    "coverage": "nyc --reporter=lcov npm run test",
+    "build": "./build.sh"
   },
   "repository": {
     "type": "git",
@@ -34,5 +35,8 @@
   "dependencies": {
     "@ts-simple/deep-keys": "^1.0.0",
     "lodash": "^4.17.15"
+  },
+  "peerDependencies": {
+    "firebase": ">=7.0.0"
   }
 }
