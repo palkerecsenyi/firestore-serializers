@@ -1,6 +1,6 @@
 {
   "name": "firestore-serializers",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "description": "An automatic Javascript serialization/deserialization system for Firestore",
   "main": "dist/index.js",
   "typings": "dist/index.d.ts",
@@ -33,7 +33,6 @@
     "typescript": "^3.8.3"
   },
   "dependencies": {
-    "@ts-simple/deep-keys": "^1.0.0",
     "lodash": "^4.17.15"
   },
   "peerDependencies": {
