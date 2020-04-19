@@ -8,15 +8,13 @@ type DataMappedValue = string | number | boolean | MappedData | DataMappedValue[
 type DataUnmappedValue = string | number | boolean | UnmappedData | DataUnmappedValue[] |
     firebase.firestore.DocumentReference | firebase.firestore.Timestamp | firebase.firestore.GeoPoint;
 
-type UnmappedData = {
+export type UnmappedData = {
     [key: string]: DataUnmappedValue
 }
 
-type MappedData = {
+export type MappedData = {
     [key: string]: DataMappedValue;
 }
-
-type MapCallback = (element: DataUnmappedValue) => DataMappedValue;
 
 type RecursiveStringArray = string | RecursiveStringArray[];
 
@@ -60,13 +58,21 @@ function getDeepListOfKeysWithoutInvadingFirebaseProperties(
     return flattenDeep(keysList);
 }
 
-export function mapDeepWithArrays(object: UnmappedData | DataMappedValue[], callback: MapCallback): MappedData {
+export function mapDeepWithArrays(
+    object: MappedData | DataMappedValue[],
+    callback: (item: DataMappedValue) => DataUnmappedValue
+): UnmappedData;
+export function mapDeepWithArrays
+(
+    object: UnmappedData | DataUnmappedValue[],
+    callback: (item: any) => DataMappedValue
+): MappedData {
     const clonedObject = cloneDeep(object);
     const keys = getDeepListOfKeysWithoutInvadingFirebaseProperties(object);
 
     for(const key of keys) {
         const item = get(clonedObject, key);
-        let newItem: DataMappedValue = cloneDeep(item as unknown as DataMappedValue);
+        let newItem = cloneDeep(item);
 
         if(isArray(item)) {
             newItem = mapDeepWithArrays(item, callback);

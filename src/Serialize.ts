@@ -21,14 +21,15 @@ function stringifyDocumentProperty(item: any): string {
     return modifiedItem;
 }
 
-function stringifyDocument(document: firebase.firestore.DocumentSnapshot): string {
+function stringifyDocument(document: firebase.firestore.DocumentSnapshot): any {
     const data = document.data();
 
     const dataToStringify = mapDeepWithArrays(data, stringifyDocumentProperty);
-    return JSON.stringify({
-        id: document.id,
+    return {
+        __id__: document.id,
+        __path__: document.ref.path,
         ...dataToStringify
-    });
+    };
 }
 
 export function serializeQuerySnapshot(querySnapshot: firebase.firestore.QuerySnapshot): string {
@@ -40,5 +41,5 @@ export function serializeQuerySnapshot(querySnapshot: firebase.firestore.QuerySn
 }
 
 export function serializeDocumentSnapshot(documentSnapshot: firebase.firestore.DocumentSnapshot) {
-    return stringifyDocument(documentSnapshot);
+    return JSON.stringify(stringifyDocument(documentSnapshot));
 }

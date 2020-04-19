@@ -1,7 +1,7 @@
 import {initFirebase} from "./prepare-tests";
 import firebase from "firebase";
 import 'firebase/firestore';
-import {serializeDocumentSnapshot} from "../src/Serialize";
+import {serializeDocumentSnapshot, serializeQuerySnapshot} from "../src";
 import chai from 'chai';
 import chaiString from 'chai-string';
 import DocumentSnapshot = firebase.firestore.DocumentSnapshot;
@@ -102,13 +102,14 @@ describe('Serialize', () => {
             const serializedData = serializeDocumentSnapshot(doc);
 
             serializedData.should.be.a('string');
-            JSON.parse(serializedData).should.have.property('a', 'b');
-            JSON.parse(serializedData).should.have.property('b');
-            JSON.parse(serializedData).b.should.startWith('__Timestamp__');
-            JSON.parse(serializedData).should.have.property('c');
-            JSON.parse(serializedData).c.should.startWith('__GeoPoint__');
-            JSON.parse(serializedData).should.have.property('d');
-            JSON.parse(serializedData).d.should.startWith('__DocumentReference__');
+            const parsedSerializedData = JSON.parse(serializedData);
+            parsedSerializedData.should.have.property('a', 'b');
+            parsedSerializedData.should.have.property('b');
+            parsedSerializedData.b.should.startWith('__Timestamp__');
+            parsedSerializedData.should.have.property('c');
+            parsedSerializedData.c.should.startWith('__GeoPoint__');
+            parsedSerializedData.should.have.property('d');
+            parsedSerializedData.d.should.startWith('__DocumentReference__');
         });
 
         it('should serialize a document with nested values', async () => {
@@ -119,11 +120,30 @@ describe('Serialize', () => {
             const serializedData = serializeDocumentSnapshot(doc);
 
             serializedData.should.be.a('string');
-            JSON.parse(serializedData).should.have.property('a', 'b')
-            JSON.parse(serializedData).should.have.property('b')
-            JSON.parse(serializedData).should.have.property('b.c')
-            JSON.parse(serializedData).should.have.property('b.d')
-            JSON.parse(serializedData).should.have.property('b.d.e')
+            const parsedSerializedData = JSON.parse(serializedData);
+            parsedSerializedData.should.have.property('a', 'b')
+            parsedSerializedData.should.have.property('b')
+            parsedSerializedData.should.have.nested.property('b.c').which.startsWith('__Timestamp__')
+            parsedSerializedData.should.have.nested.property('b.d')
+            parsedSerializedData.should.have.nested.property('b.d.e')
+            parsedSerializedData.should.have.nested.property('b.d.e[0]').which.startsWith('__GeoPoint__')
+            parsedSerializedData.should.have.nested.property('b.d.e[1]').which.startsWith('__DocumentReference__')
+        });
+    });
+
+    describe('Queries with multiple documents', () => {
+        it('should serialize all documents in array format', async () => {
+            const response = await collection.get();
+
+            const serializedData = serializeQuerySnapshot(response);
+
+            /*
+            Some documents contain DocumentReferences, which are cyclical structures.
+            If JSON.stringify() didn't throw an error, the stringification was definitely successful.
+             */
+            serializedData.should.be.a('string');
+            const parsedSerializedData = JSON.parse(serializedData);
+            parsedSerializedData.should.have.lengthOf(8);
         });
     });
 });
