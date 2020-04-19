@@ -1,4 +1,7 @@
 # firestore-serializers
+[![Coverage Status](https://coveralls.io/repos/github/palkerecsenyi/firestore-serializers/badge.svg?branch=master)](https://coveralls.io/github/palkerecsenyi/firestore-serializers?branch=master)
+![Unit tests](https://github.com/palkerecsenyi/firestore-serializers/workflows/Unit%20tests/badge.svg)
+
 An automatic JavaScript serialization/deserialization system for Firestore
 
 ## Features
