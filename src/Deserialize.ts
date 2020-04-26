@@ -1,15 +1,17 @@
 import firebase from "firebase";
-import 'firebase/firestore';
 import {SimpleJsonType} from "./types";
 import {mapDeepWithArrays, UnmappedData} from "./map-deep-with-arrays";
 import { get, isEqual, omit } from "lodash";
 
-function objectifyDocumentProperty(item: string): any {
+function objectifyDocumentProperty(
+    item: string,
+    firestore: firebase.firestore.Firestore
+): any {
     let modifiedItem: any = item;
 
     if(item.startsWith('__DocumentReference__')) {
         const path = item.split('__DocumentReference__')[1];
-        modifiedItem = firebase.firestore().doc(path);
+        modifiedItem = firestore.doc(path);
     }
 
     if(item.startsWith('__Timestamp__')) {
@@ -38,10 +40,15 @@ function getField(mappedObject: UnmappedData, fieldPath: string) {
     return get(mappedObject, fieldPath);
 }
 
-function objectifyDocument(partialObject: {
-    [key: string]: SimpleJsonType
-}): firebase.firestore.DocumentSnapshot {
-    const mappedObject = mapDeepWithArrays(partialObject, objectifyDocumentProperty);
+function objectifyDocument(
+    partialObject: {
+        [key: string]: SimpleJsonType,
+    },
+    firestore: firebase.firestore.Firestore
+): firebase.firestore.DocumentSnapshot {
+    const mappedObject = mapDeepWithArrays(partialObject, (item: string) => {
+        return objectifyDocumentProperty(item, firestore);
+    });
     const id = partialObject.__id__ as string;
     const path = partialObject.__path__ as string;
     const mappedObjectToInclude = omit(mappedObject, '__id__', '__path__');
@@ -65,13 +72,19 @@ function objectifyDocument(partialObject: {
     };
 }
 
-export function deserializeDocumentSnapshotArray(string: string): firebase.firestore.DocumentSnapshot[] {
+export function deserializeDocumentSnapshotArray(
+    string: string,
+    firestore: firebase.firestore.Firestore
+): firebase.firestore.DocumentSnapshot[] {
     const parsedString: any[] = JSON.parse(string);
     return parsedString.map(doc => {
-        return objectifyDocument(doc);
+        return objectifyDocument(doc, firestore);
     });
 }
 
-export function deserializeDocumentSnapshot(string: string): firebase.firestore.DocumentSnapshot {
-    return objectifyDocument(JSON.parse(string));
+export function deserializeDocumentSnapshot(
+    string: string,
+    firestore: firebase.firestore.Firestore
+): firebase.firestore.DocumentSnapshot {
+    return objectifyDocument(JSON.parse(string), firestore);
 }

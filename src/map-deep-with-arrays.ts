@@ -1,6 +1,5 @@
 import { cloneDeep, get, isArray, set, isObject, flattenDeep } from "lodash";
 import firebase from "firebase";
-import 'firebase/firestore';
 import {itemIsDocumentReference, itemIsGeoPoint, itemIsTimestamp} from "./firestore-identifiers";
 
 type DataMappedValue = string | number | boolean | MappedData | DataMappedValue[];

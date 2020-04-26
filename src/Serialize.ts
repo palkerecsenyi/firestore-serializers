@@ -1,5 +1,4 @@
 import firebase from 'firebase';
-import 'firebase/firestore';
 import {mapDeepWithArrays} from "./map-deep-with-arrays";
 import {itemIsDocumentReference, itemIsGeoPoint, itemIsTimestamp} from "./firestore-identifiers";
 

@@ -33,12 +33,14 @@ const basicDeserializedDocumentSnapshotTests = (deserializedDocumentSnapshot: fi
     }).should.be.false;
 }
 
+const firestore = firebase.firestore();
+
 describe('Deserialize', () => {
 
     describe('Simple documents', () => {
         it('should deserialize a simple document', async () => {
             const stringToDeserialize = getDeserializationTestString(DeserializationTestString.Simple);
-            const deserializedDocumentSnapshot = deserializeDocumentSnapshot(stringToDeserialize);
+            const deserializedDocumentSnapshot = deserializeDocumentSnapshot(stringToDeserialize, firestore);
 
             basicDeserializedDocumentSnapshotTests(deserializedDocumentSnapshot, 'simple');
             deserializedDocumentSnapshot.data().should.have.property('a', 'b');
@@ -48,7 +50,7 @@ describe('Deserialize', () => {
     describe('Documents with Timestamps', () => {
         it('should deserialize a document containing a Timestamp', async () => {
             const stringToDeserialize = getDeserializationTestString(DeserializationTestString.Timestamp);
-            const deserializedDocumentSnapshot = deserializeDocumentSnapshot(stringToDeserialize);
+            const deserializedDocumentSnapshot = deserializeDocumentSnapshot(stringToDeserialize, firestore);
             basicDeserializedDocumentSnapshotTests(deserializedDocumentSnapshot, 'timestamp');
             deserializedDocumentSnapshot.data().should.have.property('a')
             deserializedDocumentSnapshot.data().a.should.have.property('toDate');
@@ -58,7 +60,7 @@ describe('Deserialize', () => {
     describe('Documents with GeoPoints', () => {
         it('should deserialize a document containing a simple GeoPoint', async () => {
             const stringToDeserialize = getDeserializationTestString(DeserializationTestString.GeoPoint);
-            const deserializedDocumentSnapshot = deserializeDocumentSnapshot(stringToDeserialize);
+            const deserializedDocumentSnapshot = deserializeDocumentSnapshot(stringToDeserialize, firestore);
             basicDeserializedDocumentSnapshotTests(deserializedDocumentSnapshot, 'geopoint');
             deserializedDocumentSnapshot.data().should.have.property('a');
             deserializedDocumentSnapshot.data().a.should.have.property('latitude', 10);
@@ -68,7 +70,7 @@ describe('Deserialize', () => {
 
         it('should deserialize a document containing a GeoPoint with floats', async () => {
             const stringToDeserialize = getDeserializationTestString(DeserializationTestString.GeoPointFloat);
-            const deserializedDocumentSnapshot = deserializeDocumentSnapshot(stringToDeserialize);
+            const deserializedDocumentSnapshot = deserializeDocumentSnapshot(stringToDeserialize, firestore);
             basicDeserializedDocumentSnapshotTests(deserializedDocumentSnapshot, 'geopoint-with-float');
             deserializedDocumentSnapshot.data().should.have.property('a');
             deserializedDocumentSnapshot.data().a.should.have.property('latitude', 2.3294);
@@ -77,7 +79,7 @@ describe('Deserialize', () => {
 
         it('should deserialize a document containing a GeoPoint with negative floats', async () => {
             const stringToDeserialize = getDeserializationTestString(DeserializationTestString.GeoPointFloatNegative);
-            const deserializedDocumentSnapshot = deserializeDocumentSnapshot(stringToDeserialize);
+            const deserializedDocumentSnapshot = deserializeDocumentSnapshot(stringToDeserialize, firestore);
             basicDeserializedDocumentSnapshotTests(deserializedDocumentSnapshot, 'geopoint-with-negative-float');
             deserializedDocumentSnapshot.data().should.have.property('a');
             deserializedDocumentSnapshot.data().a.should.have.property('latitude', 2.314);
@@ -88,7 +90,7 @@ describe('Deserialize', () => {
     describe('Documents with DocumentReferences', () => {
         it('should deserialize a document containing a DocumentReference', async () => {
             const stringToDeserialize = getDeserializationTestString(DeserializationTestString.DocumentReference);
-            const deserializedDocumentSnapshot = deserializeDocumentSnapshot(stringToDeserialize);
+            const deserializedDocumentSnapshot = deserializeDocumentSnapshot(stringToDeserialize, firestore);
             basicDeserializedDocumentSnapshotTests(deserializedDocumentSnapshot, 'document-reference');
             deserializedDocumentSnapshot.data().should.have.property('a');
             deserializedDocumentSnapshot.data().a.should.have.property('id', 'simple');
@@ -103,7 +105,7 @@ describe('Deserialize', () => {
     describe('Documents with multiple/nested values', () => {
         it('should deserialize a document containing multiple properties', async () => {
             const stringToDeserialize = getDeserializationTestString(DeserializationTestString.Multiple);
-            const deserializedDocumentSnapshot = deserializeDocumentSnapshot(stringToDeserialize);
+            const deserializedDocumentSnapshot = deserializeDocumentSnapshot(stringToDeserialize, firestore);
             basicDeserializedDocumentSnapshotTests(deserializedDocumentSnapshot, 'multiple');
             deserializedDocumentSnapshot.data().should.have.property('a', 'b');
             deserializedDocumentSnapshot.data().b.should.have.property('seconds');
@@ -119,7 +121,7 @@ describe('Deserialize', () => {
 
         it('should deserialize a document containing nested properties', async () => {
             const stringToDeserialize = getDeserializationTestString(DeserializationTestString.Nested);
-            const deserializedDocumentSnapshot = deserializeDocumentSnapshot(stringToDeserialize);
+            const deserializedDocumentSnapshot = deserializeDocumentSnapshot(stringToDeserialize, firestore);
             basicDeserializedDocumentSnapshotTests(deserializedDocumentSnapshot, 'nested');
             deserializedDocumentSnapshot.data().should.have.property('a', 'b');
             deserializedDocumentSnapshot.data().should.have.property('b');
@@ -142,7 +144,7 @@ describe('Deserialize', () => {
     describe('Queries with multiple documents', () => {
         it('should deserialize an array of DocumentSnapshots', async () => {
             const stringToDeserialize = getDeserializationTestString(DeserializationTestString.Query);
-            const deserializedDocumentSnapshotArray = deserializeDocumentSnapshotArray(stringToDeserialize);
+            const deserializedDocumentSnapshotArray = deserializeDocumentSnapshotArray(stringToDeserialize, firestore);
 
             deserializedDocumentSnapshotArray.forEach(e => {
                 basicDeserializedDocumentSnapshotTests(e, e.id);

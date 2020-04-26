@@ -9,9 +9,11 @@ declare function serializeQuerySnapshot(
 ): string;
 
 declare function deserializeDocumentSnapshot<T = firestore.DocumentData>(
-    input: string
+    input: string,
+    firestore: firestore.Firestore
 ): firestore.DocumentSnapshot<T>;
 
 declare function deserializeDocumentSnapshotArray<T = firestore.DocumentData>(
-    input: string
+    input: string,
+    firestore: firestore.Firestore
 ): firestore.DocumentSnapshot<T>[];
