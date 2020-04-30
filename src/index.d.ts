@@ -1,19 +1,23 @@
-import {firestore} from 'firebase';
+import firebase from 'firebase';
 
 declare function serializeDocumentSnapshot(
-    documentSnapshot: firestore.DocumentSnapshot
+    documentSnapshot: firebase.firestore.DocumentSnapshot
 ): string;
 
 declare function serializeQuerySnapshot(
-    querySnapshot: firestore.QuerySnapshot
+    querySnapshot: firebase.firestore.QuerySnapshot
 ): string;
 
-declare function deserializeDocumentSnapshot<T = firestore.DocumentData>(
+declare function deserializeDocumentSnapshot<T = firebase.firestore.DocumentData>(
     input: string,
-    firestore: firestore.Firestore
-): firestore.DocumentSnapshot<T>;
+    firestore: firebase.firestore.Firestore,
+    geoPoint: typeof firebase.firestore.GeoPoint,
+    timestamp: typeof firebase.firestore.Timestamp
+): firebase.firestore.DocumentSnapshot<T>;
 
-declare function deserializeDocumentSnapshotArray<T = firestore.DocumentData>(
+declare function deserializeDocumentSnapshotArray<T = firebase.firestore.DocumentData>(
     input: string,
-    firestore: firestore.Firestore
-): firestore.DocumentSnapshot<T>[];
+    firestore: firebase.firestore.Firestore,
+    geoPoint: typeof firebase.firestore.GeoPoint,
+    timestamp: typeof firebase.firestore.Timestamp
+): firebase.firestore.DocumentSnapshot<T>[];

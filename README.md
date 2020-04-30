@@ -57,14 +57,24 @@ returns DocumentSnapshot-like object
 This matches the actual DocumentSnapshot class in behaviour and properties,
 but is NOT an instance of the DocumentSnapshot class.
 */
-deserializeDocumentSnapshot(serializedDoc);
+deserializeDocumentSnapshot(
+    serializedDoc,
+    firebase.firestore(),
+    firebase.firestore.GeoPoint,
+    firebase.firestore.Timestamp
+);
 
 /*
 returns an array of DocumentSnapshot-like objects, like the ones above.
 Does NOT return a QuerySnapshot.
 Think of it as returning the contents of the 'docs' property of a QuerySnapshot
 */
-deserializeDocumentSnapshotArray(serializedCollection);
+deserializeDocumentSnapshotArray(
+    serializedCollection,
+    firebase.firestore(),
+    firebase.firestore.GeoPoint,
+    firebase.firestore.Timestamp
+);
 ```
 
 ## License
