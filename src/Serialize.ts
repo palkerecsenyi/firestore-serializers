@@ -1,20 +1,34 @@
-import type { DocumentSnapshot, QuerySnapshot, QueryDocumentSnapshot } from 'firebase/firestore'
+import type { DocumentSnapshot, QueryDocumentSnapshot, QuerySnapshot } from 'firebase/firestore'
 import { mapDeepWithArrays } from './map-deep-with-arrays'
 import { itemIsDocumentReference, itemIsGeoPoint, itemIsTimestamp } from './firestore-identifiers'
+import { DataMappedValue, SerializedFirestoreType, SerializedFirestoreValue } from './types'
 
-function stringifyDocumentProperty(item: any): string {
-    let modifiedItem: string = item
+function stringifyDocumentProperty(item: any): DataMappedValue {
+    let modifiedItem: SerializedFirestoreValue = item
 
     if (itemIsDocumentReference(item)) {
-        modifiedItem = '__DocumentReference__' + item.path
+        modifiedItem = {
+            __fsSerializer__: 'special',
+            type: SerializedFirestoreType.DocumentReference,
+            path: item.path
+        }
     }
 
     if (itemIsGeoPoint(item)) {
-        modifiedItem = '__GeoPoint__' + item.latitude + '###' + item.longitude
+        modifiedItem = {
+            __fsSerializer__: 'special',
+            type: SerializedFirestoreType.GeoPoint,
+            latitude: item.latitude,
+            longitude: item.longitude
+        }
     }
 
     if (itemIsTimestamp(item)) {
-        modifiedItem = '__Timestamp__' + item.toDate().toISOString()
+        modifiedItem = {
+            __fsSerializer__: 'special',
+            type: SerializedFirestoreType.Timestamp,
+            iso8601: item.toDate().toISOString()
+        }
     }
 
     return modifiedItem

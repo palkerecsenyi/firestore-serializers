@@ -1,26 +1,6 @@
 import { cloneDeep, get, isArray, set, isObject, flattenDeep } from 'lodash'
-import type { DocumentReference, Timestamp, GeoPoint } from 'firebase/firestore'
-import { itemIsDocumentReference, itemIsGeoPoint, itemIsTimestamp } from './firestore-identifiers'
-
-type DataMappedValue = string | number | boolean | MappedData | DataMappedValue[];
-
-type DataUnmappedValue =
-    string
-    | number
-    | boolean
-    | UnmappedData
-    | DataUnmappedValue[]
-    | DocumentReference
-    | Timestamp
-    | GeoPoint;
-
-export type UnmappedData = {
-    [key: string]: DataUnmappedValue
-}
-
-export type MappedData = {
-    [key: string]: DataMappedValue;
-}
+import { itemIsDocumentReference, itemIsGeoPoint, itemIsTimestamp, serialItemIsSpecial } from './firestore-identifiers'
+import type { DataMappedValue, DataUnmappedValue, MappedData, UnmappedData } from './types'
 
 type RecursiveStringArray = string | RecursiveStringArray[];
 
@@ -38,10 +18,11 @@ function getDeepListOfKeysWithoutInvadingFirebaseProperties(
             const prefixKeyWith = prefix === '' ? '' : prefix + '.'
 
             if (isObject(item)) {
-                // don't dive further into the object if it's an important Firestore type
+                // don't dive further into the object if it's an important Firestore type (or a serialized type)
                 if (!itemIsDocumentReference(item)
                     && !itemIsTimestamp(item)
                     && !itemIsGeoPoint(item)
+                    && !serialItemIsSpecial(item)
                 ) {
                     keysList.push(
                         getDeepListOfKeysWithoutInvadingFirebaseProperties(
@@ -68,8 +49,7 @@ export function mapDeepWithArrays(
     object: MappedData | DataMappedValue[],
     callback: (item: DataMappedValue) => DataUnmappedValue,
 ): UnmappedData;
-export function mapDeepWithArrays
-(
+export function mapDeepWithArrays(
     object: UnmappedData | DataUnmappedValue[],
     callback: (item: any) => DataMappedValue,
 ): MappedData {

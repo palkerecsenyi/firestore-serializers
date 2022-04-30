@@ -1,29 +1,42 @@
 import { Firestore, doc, GeoPoint, Timestamp, SnapshotMetadata, DocumentSnapshot } from 'firebase/firestore'
-import { SimpleJsonType } from './types'
-import { mapDeepWithArrays, UnmappedData } from './map-deep-with-arrays'
+import type { DataMappedValue, UnmappedData } from './types'
+import { mapDeepWithArrays } from './map-deep-with-arrays'
 import { get, omit } from 'lodash'
+import { serialItemIsSpecial } from './firestore-identifiers'
+import { SerializedFirestoreType } from './types'
 
 function objectifyDocumentProperty(
     item: string,
     firestore: Firestore,
+    backwardsCompatibility: boolean,
 ): any {
     let modifiedItem: any = item
 
-    if (typeof item === 'string' && item.startsWith) {
+    if (serialItemIsSpecial(modifiedItem)) {
+        switch (modifiedItem.type) {
+            case SerializedFirestoreType.DocumentReference:
+                modifiedItem = doc(firestore, modifiedItem.path)
+                break
+            case SerializedFirestoreType.GeoPoint:
+                modifiedItem = new GeoPoint(modifiedItem.latitude, modifiedItem.longitude)
+                break
+            case SerializedFirestoreType.Timestamp:
+                modifiedItem = Timestamp.fromDate(new Date(modifiedItem.iso8601))
+                break
+        }
+    }
+
+    if (backwardsCompatibility && typeof item === 'string' && item.startsWith) {
         if (item.startsWith('__DocumentReference__')) {
             const path = item.split('__DocumentReference__')[1]
             modifiedItem = doc(firestore, path)
-        }
-
-        if (item.startsWith('__Timestamp__')) {
-            const dateString = item.split('__Timestamp__')[1]
-            modifiedItem = Timestamp.fromDate(new Date(dateString))
-        }
-
-        if (item.startsWith('__GeoPoint__')) {
+        } else if (item.startsWith('__GeoPoint__')) {
             const geoSection = item.split('__GeoPoint__')[1]
             const [latitude, longitude] = geoSection.split('###')
             modifiedItem = new GeoPoint(parseFloat(latitude), parseFloat(longitude))
+        } else if (item.startsWith('__Timestamp__')) {
+            const dateString = item.split('__Timestamp__')[1]
+            modifiedItem = Timestamp.fromDate(new Date(dateString))
         }
     }
 
@@ -40,12 +53,13 @@ function getField(mappedObject: UnmappedData, fieldPath: string) {
 
 function objectifyDocument(
     partialObject: {
-        [key: string]: SimpleJsonType,
+        [key: string]: DataMappedValue,
     },
     firestore: Firestore,
+    backwardsCompatibility: boolean,
 ): DocumentSnapshot {
     const mappedObject = mapDeepWithArrays(partialObject, (item: string) => {
-        return objectifyDocumentProperty(item, firestore)
+        return objectifyDocumentProperty(item, firestore, backwardsCompatibility)
     })
     const id = partialObject.__id__ as string
     const path = partialObject.__path__ as string
@@ -67,19 +81,27 @@ function objectifyDocument(
     }
 }
 
+type Options = {
+    backwardsCompatibility: boolean
+}
+
 export function deserializeDocumentSnapshotArray(
     string: string,
     firestore: Firestore,
+    options?: Options,
 ): DocumentSnapshot[] {
+    // noinspection TypeScriptUnresolvedVariable
     const parsedString: any[] = JSON.parse(string)
     return parsedString.map(doc => {
-        return objectifyDocument(doc, firestore)
+        return objectifyDocument(doc, firestore, options?.backwardsCompatibility === true)
     })
 }
 
 export function deserializeDocumentSnapshot(
     string: string,
     firestore: Firestore,
+    options?: Options,
 ): DocumentSnapshot {
-    return objectifyDocument(JSON.parse(string), firestore)
+    // noinspection TypeScriptUnresolvedVariable
+    return objectifyDocument(JSON.parse(string), firestore, options?.backwardsCompatibility === true)
 }

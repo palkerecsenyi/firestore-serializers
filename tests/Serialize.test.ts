@@ -11,6 +11,7 @@ import {
 import { serializeDocumentSnapshot, serializeQuerySnapshot } from '../src'
 import { should, use } from 'chai'
 import chaiString from 'chai-string'
+import { SerializedFirestoreType } from '../src/types'
 
 should()
 use(chaiString)
@@ -41,7 +42,10 @@ describe('Serialize', () => {
 
             serializedDocument.should.be.a('string')
             JSON.parse(serializedDocument).should.have.property('a')
-            JSON.parse(serializedDocument).a.should.startWith('__Timestamp__')
+            JSON.parse(serializedDocument).a.should.have.property('__fsSerializer__')
+            JSON.parse(serializedDocument).a.type.should.equal(SerializedFirestoreType.Timestamp)
+            JSON.parse(serializedDocument).a.should.have.property('iso8601')
+            JSON.parse(serializedDocument).a.iso8601.length.should.be.oneOf([24, 27])
         })
     })
 
@@ -51,8 +55,10 @@ describe('Serialize', () => {
 
             serializedDocument.should.be.a('string')
             JSON.parse(serializedDocument).should.have.property('a')
-            JSON.parse(serializedDocument).a.should.startWith('__GeoPoint__')
-            JSON.parse(serializedDocument).a.should.contain('###')
+            JSON.parse(serializedDocument).a.should.have.property('__fsSerializer__')
+            JSON.parse(serializedDocument).a.type.should.equal(SerializedFirestoreType.GeoPoint)
+            JSON.parse(serializedDocument).a.should.have.property('latitude')
+            JSON.parse(serializedDocument).a.should.have.property('longitude')
             return serializedDocument
         }
 
@@ -78,7 +84,9 @@ describe('Serialize', () => {
             const serializedData = serializeDocumentSnapshot(doc)
 
             serializedData.should.be.a('string')
-            JSON.parse(serializedData).a.should.startWith('__DocumentReference__')
+            JSON.parse(serializedData).a.should.have.property('__fsSerializer__')
+            JSON.parse(serializedData).a.type.should.equal(SerializedFirestoreType.DocumentReference)
+            JSON.parse(serializedData).a.should.have.property('path')
         })
     })
 
@@ -91,11 +99,11 @@ describe('Serialize', () => {
             const parsedSerializedData = JSON.parse(serializedData)
             parsedSerializedData.should.have.property('a', 'b')
             parsedSerializedData.should.have.property('b')
-            parsedSerializedData.b.should.startWith('__Timestamp__')
+            parsedSerializedData.b.type.should.equal(SerializedFirestoreType.Timestamp)
             parsedSerializedData.should.have.property('c')
-            parsedSerializedData.c.should.startWith('__GeoPoint__')
+            parsedSerializedData.c.type.should.equal(SerializedFirestoreType.GeoPoint)
             parsedSerializedData.should.have.property('d')
-            parsedSerializedData.d.should.startWith('__DocumentReference__')
+            parsedSerializedData.d.type.should.equal(SerializedFirestoreType.DocumentReference)
         })
 
         it('should serialize a document with nested values', async () => {
@@ -106,11 +114,11 @@ describe('Serialize', () => {
             const parsedSerializedData = JSON.parse(serializedData)
             parsedSerializedData.should.have.property('a', 'b')
             parsedSerializedData.should.have.property('b')
-            parsedSerializedData.should.have.nested.property('b.c').which.startsWith('__Timestamp__')
+            parsedSerializedData.should.have.nested.property('b.c.type').which.equals(SerializedFirestoreType.Timestamp)
             parsedSerializedData.should.have.nested.property('b.d')
             parsedSerializedData.should.have.nested.property('b.d.e')
-            parsedSerializedData.should.have.nested.property('b.d.e[0]').which.startsWith('__GeoPoint__')
-            parsedSerializedData.should.have.nested.property('b.d.e[1]').which.startsWith('__DocumentReference__')
+            parsedSerializedData.should.have.nested.property('b.d.e[0].type').which.equals(SerializedFirestoreType.GeoPoint)
+            parsedSerializedData.should.have.nested.property('b.d.e[1].type').which.equals(SerializedFirestoreType.DocumentReference)
         })
     })
 

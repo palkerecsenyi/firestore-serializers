@@ -11,9 +11,9 @@ An automatic JavaScript serialization/deserialization system for Firestore
 
 - Also supports QuerySnapshot serialization and deserialization
 
-- Can serialize/deserialize cyclical Firestore structured (i.e. DocumentReference) automatically
+- Can serialize/deserialize cyclical Firestore structures (e.g. DocumentReference) automatically
 
-- Deep serialization/deserialization, including array members
+- Deep recursive serialization/deserialization, including array members
 
 - Works in-browser, in Node.js, or anywhere Firebase v9+ is supported
 
@@ -26,7 +26,7 @@ Firestore provides offline support, but it's fairly primitive: if your device do
 
 A fix for this is to manually store Firestore data in your own caching system (e.g. React Native's AsyncStorage or LocalStorage in a browser). However, this often presents challenges because Firestore documents can contain non-serializable values.
 
-This library does the heavy lifting for you, by converting special Firestore types (e.g. GeoPoint or DocumentReference) in your documents to serializable values, and vice-versa.
+This library does the heavy lifting for you, by converting special Firestore types (e.g. GeoPoint or DocumentReference) in your documents into serializable values, and vice-versa.
 
 ## Installation
 ```
@@ -72,14 +72,36 @@ deserializeDocumentSnapshotArray(
 );
 ```
 
-## Limitations
-Serialized documents use certain prefixes to denote when a property is a special Firestore type (GeoPoint, Timestamp, or DocumentReference). This means if you're genuinely storing one of the following string values and try to deserialize a document, `firestore-serializers` will try to decode it as a Firestore type:
+## Deserialization limitations
+**In previous versions,** serialized documents used certain prefixes to denote when a property is a special Firestore type (GeoPoint, Timestamp, or DocumentReference). This means if you were genuinely storing one of the following string values (independently of `firestore-serializers`) and tried to deserialize a document, `firestore-serializers` would try to decode it as a Firestore type:
 
 - `__DocumentReference__`
 - `__GeoPoint__`
 - `__Timestamp__`
 
-This could also open your code up to injection attacks, so make sure to sanitize user inputs! A backwards-compatible fix will be published soon.
+The latest version of `firestore-serializers` instead represents serialized values as objects. Any object containing the following will be deserialized:
+
+```json
+{
+  "__fsSerializer__": "special",
+  "type": ...,
+  ...,
+}
+```
+
+If you still need backwards-compatibility with the previous string format (e.g. to not invalidate caches on client devices), you can pass an option shown below. However, keep in mind the old approach may be susceptible to injection attacks!
+
+```typescript
+deserializeDocumentSnapshot(
+    stringToDeserialize,
+    firestore,
+    {
+        backwardsCompatibility: true,
+    },
+)
+
+// same syntax for deserializeDocumentSnapshotArray
+```
 
 ## License
 Licensed under the MIT license. Copyright Pal Kerecsenyi.

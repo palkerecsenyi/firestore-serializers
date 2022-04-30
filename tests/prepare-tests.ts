@@ -1,5 +1,7 @@
-import {initializeApp} from 'firebase/app'
-import {Timestamp, GeoPoint, doc, getFirestore, writeBatch} from 'firebase/firestore'
+import { initializeApp } from 'firebase/app'
+import { doc, GeoPoint, getFirestore, Timestamp, writeBatch } from 'firebase/firestore'
+import { SerializedFirestoreType } from '../src/types'
+import { cloneDeep } from 'lodash'
 
 initializeApp({
     apiKey: 'AIzaSyA-LcxEpTeXYgKSLziNQYMV3s1-LeU-mrc',
@@ -66,36 +68,172 @@ export async function initFirebase() {
 }
 
 export enum DeserializationTestString {
-    Simple = 0,
-    Timestamp = 1,
-    GeoPoint = 2,
-    GeoPointFloat = 3,
-    GeoPointFloatNegative = 4,
-    DocumentReference = 5,
-    Multiple = 6,
-    Nested = 7,
-    Query = 8
+    Simple = 'simple',
+    Timestamp = 'timestamp',
+    GeoPoint = 'geopoint',
+    GeoPointFloat = 'geopoint-with-float',
+    GeoPointFloatNegative = 'geopoint-with-negative-float',
+    DocumentReference = 'document-reference',
+    Multiple = 'multiple',
+    Nested = 'nested',
+    Query = 'query',
 }
 
-export function getDeserializationTestString(type: DeserializationTestString) {
-    switch (type) {
-        case DeserializationTestString.Simple:
-            return '{"__id__":"simple","__path__":"documents/simple","a":"b","id":"simple"}'
-        case DeserializationTestString.Timestamp:
-            return '{"__id__":"timestamp","__path__":"documents/timestamp","a":"__Timestamp__2020-04-19T12:31:15.360Z","id":"timestamp"}'
-        case DeserializationTestString.GeoPoint:
-            return '{"__id__":"geopoint","__path__":"documents/geopoint","id":"geopoint","a":"__GeoPoint__10###10"}'
-        case DeserializationTestString.GeoPointFloat:
-            return '{"__id__":"geopoint-with-float","__path__":"documents/geopoint-with-float","a":"__GeoPoint__2.3294###34.224","id":"geopoint-with-float"}'
-        case DeserializationTestString.GeoPointFloatNegative:
-            return '{"__id__":"geopoint-with-negative-float","__path__":"documents/geopoint-with-negative-float","a":"__GeoPoint__2.314###-32.443","id":"geopoint-with-negative-float"}'
-        case DeserializationTestString.DocumentReference:
-            return '{"__id__":"document-reference","__path__":"documents/document-reference","a":"__DocumentReference__documents/simple","id":"document-reference"}'
-        case DeserializationTestString.Multiple:
-            return '{"__id__":"multiple","__path__":"documents/multiple","a":"b","b":"__Timestamp__2020-04-19T15:17:33.856Z","id":"multiple","d":"__DocumentReference__documents/simple","c":"__GeoPoint__4.3234###-2.234"}'
-        case DeserializationTestString.Nested:
-            return '{"__id__":"nested","__path__":"documents/nested","a":"b","b":{"d":{"e":["__GeoPoint__3.43###-3.445","__DocumentReference__documents/simple"]},"c":"__Timestamp__2020-04-19T15:21:09.935Z"},"id":"nested"}'
-        case DeserializationTestString.Query:
-            return '[{"__id__":"document-reference","__path__":"documents/document-reference","a":"__DocumentReference__documents/simple","id":"document-reference"},{"__id__":"geopoint","__path__":"documents/geopoint","id":"geopoint","a":"__GeoPoint__10###10"},{"__id__":"geopoint-with-float","__path__":"documents/geopoint-with-float","id":"geopoint-with-float","a":"__GeoPoint__2.3294###34.224"},{"__id__":"geopoint-with-negative-float","__path__":"documents/geopoint-with-negative-float","id":"geopoint-with-negative-float","a":"__GeoPoint__2.314###-32.443"},{"__id__":"multiple","__path__":"documents/multiple","c":"__GeoPoint__4.3234###-2.234","a":"b","b":"__Timestamp__2020-04-19T15:26:09.761Z","id":"multiple","d":"__DocumentReference__documents/simple"},{"__id__":"nested","__path__":"documents/nested","a":"b","b":{"c":"__Timestamp__2020-04-19T15:26:09.761Z","d":{"e":["__GeoPoint__3.43###-3.445","__DocumentReference__documents/simple"]}},"id":"nested"},{"__id__":"simple","__path__":"documents/simple","id":"simple","a":"b"},{"__id__":"timestamp","__path__":"documents/timestamp","a":"__Timestamp__2020-04-19T15:26:09.760Z","id":"timestamp"}]'
+const generateBaseObject = (id: string) => {
+    return {
+        __id__: id,
+        __path__: `documents/${id}`,
+        id: id,
     }
+}
+
+const generateSerializedObject = (type: SerializedFirestoreType, value: any) => {
+    return {
+        __fsSerializer__: 'special',
+        type,
+        ...value,
+    }
+}
+
+export function getDeserializationTestObject(type: DeserializationTestString, legacy: boolean) {
+    const legacyObjects = {
+        [DeserializationTestString.Simple]: {
+            a: 'b',
+            ...generateBaseObject('simple'),
+        },
+        [DeserializationTestString.Timestamp]: {
+            a: '__Timestamp__2020-04-19T12:31:15.360Z',
+            ...generateBaseObject('timestamp'),
+        },
+        [DeserializationTestString.GeoPoint]: {
+            a: '__GeoPoint__10###10',
+            ...generateBaseObject('geopoint'),
+        },
+        [DeserializationTestString.GeoPointFloat]: {
+            a: '__GeoPoint__2.3294###34.224',
+            ...generateBaseObject('geopoint-with-float'),
+        },
+        [DeserializationTestString.GeoPointFloatNegative]: {
+            a: '__GeoPoint__2.314###-32.443',
+            ...generateBaseObject('geopoint-with-negative-float'),
+        },
+        [DeserializationTestString.DocumentReference]: {
+            a: '__DocumentReference__documents/simple',
+            ...generateBaseObject('document-reference'),
+        },
+        [DeserializationTestString.Multiple]: {
+            a: 'b',
+            b: '__Timestamp__2020-04-19T15:17:33.856Z',
+            c: '__GeoPoint__4.3234###-2.234',
+            d: '__DocumentReference__documents/simple',
+            ...generateBaseObject('multiple'),
+        },
+        [DeserializationTestString.Nested]: {
+            a: 'b',
+            b: {
+                d: {
+                    e: [
+                        '__GeoPoint__3.43###-3.445',
+                        '__DocumentReference__documents/simple',
+                    ]
+                },
+                c: '__Timestamp__2020-04-19T15:21:09.935Z',
+            },
+            ...generateBaseObject('nested'),
+        },
+        [DeserializationTestString.Query]: {},
+    }
+
+    const newObjects: {
+        [key: string]: any
+    } = {}
+    for (const key of Object.keys(legacyObjects)) {
+        let object: {
+            [key: string]: any
+        } = cloneDeep(legacyObjects[key as DeserializationTestString])
+
+        switch (key) {
+            case DeserializationTestString.Simple:
+                newObjects['simple'] = legacyObjects['simple']
+                break
+            case DeserializationTestString.Timestamp:
+                object.a = generateSerializedObject(SerializedFirestoreType.Timestamp, {
+                    iso8601: '2020-04-19T12:31:15.360Z',
+                })
+                newObjects['timestamp'] = object
+                break
+            case DeserializationTestString.GeoPoint:
+                object.a = generateSerializedObject(SerializedFirestoreType.GeoPoint, {
+                    latitude: 10,
+                    longitude: 10,
+                })
+                newObjects['geopoint'] = object
+                break
+            case DeserializationTestString.GeoPointFloat:
+                object.a = generateSerializedObject(SerializedFirestoreType.GeoPoint, {
+                    latitude: 2.3294,
+                    longitude: 34.224,
+                })
+                newObjects['geopoint-with-float'] = object
+                break
+            case DeserializationTestString.GeoPointFloatNegative:
+                object.a = generateSerializedObject(SerializedFirestoreType.GeoPoint, {
+                    latitude: 2.314,
+                    longitude: -32.443,
+                })
+                newObjects['geopoint-with-negative-float'] = object
+                break
+            case DeserializationTestString.DocumentReference:
+                object.a = generateSerializedObject(SerializedFirestoreType.DocumentReference, {
+                    path: 'documents/simple',
+                })
+                newObjects['document-reference'] = object
+                break
+            case DeserializationTestString.Multiple:
+                object.b = generateSerializedObject(SerializedFirestoreType.Timestamp, {
+                    iso8601: '2020-04-19T15:17:33.856Z',
+                })
+                object.c = generateSerializedObject(SerializedFirestoreType.GeoPoint, {
+                    latitude: 4.3234,
+                    longitude: -2.234,
+                })
+                object.d = generateSerializedObject(SerializedFirestoreType.DocumentReference, {
+                    path: 'documents/simple',
+                })
+                newObjects['multiple'] = object
+                break
+            case DeserializationTestString.Nested:
+                object.b.d.e[0] = generateSerializedObject(SerializedFirestoreType.GeoPoint, {
+                    latitude: 3.43,
+                    longitude: -3.445,
+                })
+                object.b.d.e[1] = generateSerializedObject(SerializedFirestoreType.DocumentReference, {
+                    path: 'documents/simple',
+                })
+                object.b.c = generateSerializedObject(SerializedFirestoreType.Timestamp, {
+                    iso8601: '2020-04-19T15:21:09.935Z',
+                })
+                newObjects['nested'] = object
+                break
+        }
+    }
+
+    if (type === DeserializationTestString.Query) {
+        if (legacy) {
+            delete legacyObjects[DeserializationTestString.Query]
+            return Object.values(legacyObjects)
+        } else {
+            return Object.values(newObjects)
+        }
+    }
+
+    if (legacy) {
+        return legacyObjects[type]
+    } else {
+        return newObjects[type]
+    }
+}
+
+export function getDeserializationTestString(type: DeserializationTestString, legacy = false) {
+    return JSON.stringify(getDeserializationTestObject(type, legacy))
 }
