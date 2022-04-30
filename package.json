@@ -6,7 +6,7 @@
   "typings": "dist/index.d.ts",
   "scripts": {
     "test": "./node_modules/.bin/mocha --timeout 10000 --exit --extensions ts --require ts-node/register tests/**/*.test.ts",
-    "coverage": "nyc --reporter=lcov npm run test",
+    "coverage": "nyc --reporter=lcov yarn run test",
     "build": "./build.sh"
   },
   "repository": {
