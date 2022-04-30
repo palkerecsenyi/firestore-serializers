@@ -1,44 +1,44 @@
-import firebase from 'firebase';
-import {mapDeepWithArrays} from "./map-deep-with-arrays";
-import {itemIsDocumentReference, itemIsGeoPoint, itemIsTimestamp} from "./firestore-identifiers";
+import type { DocumentSnapshot, QuerySnapshot, QueryDocumentSnapshot } from 'firebase/firestore'
+import { mapDeepWithArrays } from './map-deep-with-arrays'
+import { itemIsDocumentReference, itemIsGeoPoint, itemIsTimestamp } from './firestore-identifiers'
 
 function stringifyDocumentProperty(item: any): string {
-    let modifiedItem: string = item;
+    let modifiedItem: string = item
 
-    if(itemIsDocumentReference(item)) {
-        modifiedItem = '__DocumentReference__' + item.path;
+    if (itemIsDocumentReference(item)) {
+        modifiedItem = '__DocumentReference__' + item.path
     }
 
-    if(itemIsGeoPoint(item)) {
-        modifiedItem = '__GeoPoint__' + item.latitude + '###' + item.longitude;
+    if (itemIsGeoPoint(item)) {
+        modifiedItem = '__GeoPoint__' + item.latitude + '###' + item.longitude
     }
 
-    if(itemIsTimestamp(item)) {
-        modifiedItem = '__Timestamp__' + item.toDate().toISOString();
+    if (itemIsTimestamp(item)) {
+        modifiedItem = '__Timestamp__' + item.toDate().toISOString()
     }
 
-    return modifiedItem;
+    return modifiedItem
 }
 
-function stringifyDocument(document: firebase.firestore.DocumentSnapshot): any {
-    const data = document.data();
+function stringifyDocument(document: DocumentSnapshot): any {
+    const data = document.data()
 
-    const dataToStringify = mapDeepWithArrays(data, stringifyDocumentProperty);
+    const dataToStringify = mapDeepWithArrays(data, stringifyDocumentProperty)
     return {
         __id__: document.id,
         __path__: document.ref.path,
-        ...dataToStringify
-    };
+        ...dataToStringify,
+    }
 }
 
-export function serializeQuerySnapshot(querySnapshot: firebase.firestore.QuerySnapshot): string {
-    const stringifiedDocs = querySnapshot.docs.map((doc: firebase.firestore.DocumentSnapshot) => {
-        return stringifyDocument(doc);
-    });
+export function serializeQuerySnapshot(querySnapshot: QuerySnapshot): string {
+    const stringifiedDocs = querySnapshot.docs.map((doc: QueryDocumentSnapshot) => {
+        return stringifyDocument(doc)
+    })
 
-    return JSON.stringify(stringifiedDocs);
+    return JSON.stringify(stringifiedDocs)
 }
 
-export function serializeDocumentSnapshot(documentSnapshot: firebase.firestore.DocumentSnapshot) {
-    return JSON.stringify(stringifyDocument(documentSnapshot));
+export function serializeDocumentSnapshot(documentSnapshot: DocumentSnapshot) {
+    return JSON.stringify(stringifyDocument(documentSnapshot))
 }
