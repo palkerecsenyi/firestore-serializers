@@ -4,10 +4,9 @@ import { SerializedFirestoreType } from '../src/types'
 import { cloneDeep } from 'lodash'
 
 initializeApp({
-    apiKey: 'AIzaSyA-LcxEpTeXYgKSLziNQYMV3s1-LeU-mrc',
-    databaseURL: 'https://firestore-serializer.firebaseio.com',
-    projectId: 'firestore-serializer',
-    appId: '1:713937975677:web:20bc5eb2de1cf56fd63414',
+    apiKey: "AIzaSyDgi2XrGM9vDFpMGYjEjEkYA3Szl2dnBOY",
+    projectId: "firestore-serializer-test",
+    appId: "1:492120789873:web:91dbee7c7e352dcfabdcd0",
 })
 
 const db = getFirestore()
