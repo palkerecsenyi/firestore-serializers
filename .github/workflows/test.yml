@@ -16,11 +16,11 @@ jobs:
         with:
           node-version: 16
 
-      - uses: borales/actions-yarn@v2.3.0
+      - uses: borales/actions-yarn@v3.0.0
         with:
           cmd: install --frozen-lockfile
 
-      - uses: borales/actions-yarn@v2.3.0
+      - uses: borales/actions-yarn@v3.0.0
         with:
           cmd: run coverage
 
